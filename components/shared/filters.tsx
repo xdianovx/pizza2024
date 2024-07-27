@@ -13,8 +13,25 @@ interface Props {
   className?: string;
 }
 
+interface PriceProps {
+  priceFrom: number;
+  priceTo: number;
+}
+
 export const Filters: React.FC<Props> = ({ className }) => {
   const { items, loading, onAddId, selectedIds } = useFilterIngridients();
+  const [price, setPrice] = React.useState<PriceProps>({
+    priceFrom: 0,
+    priceTo: 1000,
+  });
+
+  const updatePrice = (name: keyof PriceProps, value: number) => {
+    setPrice({
+      ...price,
+      [name]: value,
+    });
+  };
+
   const ingridients = items.map((item) => ({
     value: String(item.id),
     text: item.name,
@@ -35,22 +52,34 @@ export const Filters: React.FC<Props> = ({ className }) => {
         <div className="flex gap-3 mb-5">
           <Input
             type="number"
+            value={price.priceFrom}
             placeholder="0"
             min={0}
             max={1000}
             defaultValue={0}
+            onChange={(e) => updatePrice("priceFrom", Number(e.target.value))}
           />
 
           <Input
             type="number"
+            value={price.priceTo}
             placeholder="1000"
             min={0}
             max={1000}
             defaultValue={1000}
+            onChange={(e) => updatePrice("priceTo", Number(e.target.value))}
           />
         </div>
 
-        <RangeSlider min={0} max={1000} step={1} />
+        <RangeSlider
+          min={0}
+          max={1000}
+          step={10}
+          value={[price.priceFrom, price.priceTo]}
+          onValueChange={([priceFrom, priceTo]) =>
+            setPrice({ priceFrom, priceTo })
+          }
+        />
       </div>
 
       <CheckboxFiltersGroup
