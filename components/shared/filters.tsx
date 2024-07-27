@@ -8,18 +8,28 @@ import { Input } from "../ui/input";
 import { RangeSlider } from "../ui";
 import { CheckboxFiltersGroup } from "./checkbox-filters-group";
 import { useFilterIngridients } from "@/hooks/useFilterIngridients";
-import { useSet } from "react-use";
+import { useSearchParam, useSet } from "react-use";
+import qs from "qs";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface Props {
   className?: string;
 }
 
 interface PriceProps {
-  priceFrom: number;
-  priceTo: number;
+  priceFrom?: number;
+  priceTo?: number;
+}
+
+interface QueryFilters extends PriceProps {
+  pizzaTypes: string;
+  sizes: string;
+  ingridients: string;
 }
 
 export const Filters: React.FC<Props> = ({ className }) => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     items,
     loading,
@@ -27,12 +37,22 @@ export const Filters: React.FC<Props> = ({ className }) => {
     selectedIds: indridients,
   } = useFilterIngridients();
   const [price, setPrice] = React.useState<PriceProps>({
-    priceFrom: 0,
-    priceTo: 1000,
+    priceFrom: Number(searchParams.get("priceFrom")) || undefined,
+    priceTo: Number(searchParams.get("priceTo")) || undefined,
   });
 
-  const [sizes, { toggle: toggleSizes }] = useSet(new Set<string>([]));
-  const [types, { toggle: toggleTypes }] = useSet(new Set<string>([]));
+  const [sizes, { toggle: toggleSizes }] = useSet(
+    new Set<string>(
+      searchParams.has("sizes") ? searchParams.get("sizes")?.split(",") : []
+    )
+  );
+  const [types, { toggle: toggleTypes }] = useSet(
+    new Set<string>(
+      searchParams.has("pizzaTypes")
+        ? searchParams.get("pizzaTypes")?.split(",")
+        : []
+    )
+  );
 
   const updatePrice = (name: keyof PriceProps, value: number) => {
     setPrice({
@@ -47,8 +67,20 @@ export const Filters: React.FC<Props> = ({ className }) => {
   }));
 
   useEffect(() => {
-    console.log({ price, sizes, types, indridients });
-  }, [price, sizes, types, indridients]);
+    const filters = {
+      ...price,
+      pizzaTypes: Array.from(types),
+      sizes: Array.from(sizes),
+      ingridients: Array.from(indridients),
+    };
+
+    const queryString = qs.stringify(filters, {
+      arrayFormat: "comma",
+    });
+
+    router.push(`?${queryString}`, { scroll: false });
+  }, [price, sizes, types, indridients, router]);
+
   return (
     <div className={cn(className, "")}>
       <Title text="Фильтрация" size="sm" className="mb-5 font-bold" />
@@ -126,7 +158,7 @@ export const Filters: React.FC<Props> = ({ className }) => {
           min={0}
           max={1000}
           step={10}
-          value={[price.priceFrom, price.priceTo]}
+          value={[price.priceFrom || 0, price.priceTo || 1000]}
           onValueChange={([priceFrom, priceTo]) =>
             setPrice({ priceFrom, priceTo })
           }
