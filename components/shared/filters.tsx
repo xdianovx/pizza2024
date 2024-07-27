@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Title } from "./title";
 import { cn } from "@/lib/utils";
 import { FilterCheckbox } from "./filter-checkbox";
@@ -8,6 +8,7 @@ import { Input } from "../ui/input";
 import { RangeSlider } from "../ui";
 import { CheckboxFiltersGroup } from "./checkbox-filters-group";
 import { useFilterIngridients } from "@/hooks/useFilterIngridients";
+import { useSet } from "react-use";
 
 interface Props {
   className?: string;
@@ -19,11 +20,19 @@ interface PriceProps {
 }
 
 export const Filters: React.FC<Props> = ({ className }) => {
-  const { items, loading, onAddId, selectedIds } = useFilterIngridients();
+  const {
+    items,
+    loading,
+    onAddId,
+    selectedIds: indridients,
+  } = useFilterIngridients();
   const [price, setPrice] = React.useState<PriceProps>({
     priceFrom: 0,
     priceTo: 1000,
   });
+
+  const [sizes, { toggle: toggleSizes }] = useSet(new Set<string>([]));
+  const [types, { toggle: toggleTypes }] = useSet(new Set<string>([]));
 
   const updatePrice = (name: keyof PriceProps, value: number) => {
     setPrice({
@@ -36,15 +45,57 @@ export const Filters: React.FC<Props> = ({ className }) => {
     value: String(item.id),
     text: item.name,
   }));
+
+  useEffect(() => {
+    console.log({ price, sizes, types, indridients });
+  }, [price, sizes, types, indridients]);
   return (
     <div className={cn(className, "")}>
       <Title text="Фильтрация" size="sm" className="mb-5 font-bold" />
 
       {/* Чекбоксы вверх */}
-      <div className="flex flex-col gap-4">
-        <FilterCheckbox text={"Можно собирать"} name="asd" value={"1"} />
-        <FilterCheckbox text={"Можно собирать"} name="asd" value={"2"} />
-      </div>
+      <CheckboxFiltersGroup
+        title="Тип теста"
+        name="pizzaTypes"
+        className="mb-5"
+        items={[
+          {
+            text: "Традиционное",
+            value: "20",
+          },
+          {
+            text: "Тонкое",
+            value: "30",
+          },
+        ]}
+        loading={loading}
+        onChange={toggleTypes}
+        selectedValues={types}
+      />
+
+      {/* Чекбоксы вверх */}
+      <CheckboxFiltersGroup
+        title="Размеры"
+        name="sizes"
+        className="mb-5"
+        items={[
+          {
+            text: "20 см",
+            value: "20",
+          },
+          {
+            text: "30 см",
+            value: "30",
+          },
+          {
+            text: "40 см",
+            value: "40",
+          },
+        ]}
+        loading={loading}
+        onChange={toggleSizes}
+        selectedValues={sizes}
+      />
 
       {/* Цена */}
       <div className="mt-5 border-y border-y-neutral-100 py-6 pb-7">
@@ -90,7 +141,7 @@ export const Filters: React.FC<Props> = ({ className }) => {
         items={ingridients}
         loading={loading}
         onChange={onAddId}
-        selectedIds={selectedIds}
+        selectedValues={indridients}
       />
     </div>
   );
